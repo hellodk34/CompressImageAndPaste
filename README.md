@@ -1,0 +1,2 @@
+# CompressImageAndPaste
+压缩剪贴板图片并立即写入剪贴板，接着在任意地方粘贴压缩后的图片
