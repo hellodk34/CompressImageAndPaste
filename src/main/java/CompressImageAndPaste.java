@@ -1,3 +1,6 @@
+import net.coobird.thumbnailator.Thumbnails;
+
+import javax.imageio.ImageIO;
 import java.awt.Graphics2D;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -5,7 +8,11 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DecimalFormat;
 
 /**
@@ -57,12 +64,19 @@ public class CompressImageAndPaste {
     }
 
     private BufferedImage compressImage(BufferedImage image, double compressRatio) {
-        int newWidth = (int) (image.getWidth() * compressRatio);
-        int newHeight = (int) (image.getHeight() * compressRatio);
-        BufferedImage resImage = new BufferedImage(newWidth, newHeight, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = resImage.createGraphics();
-        g.drawImage(image, 0, 0, newWidth, newHeight, null);
-        g.dispose();
+        BufferedImage resImage = null;
+        try {
+            Path tmpFilePath = Files.createTempFile("compressed_image", ".jpg");
+            File targetFile = tmpFilePath.toFile();
+            Thumbnails.of(image)
+                    .scale(1)
+                    .outputQuality(compressRatio)
+                    .toFile(targetFile);
+            resImage = ImageIO.read(targetFile);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
         return resImage;
     }
 
@@ -73,10 +87,15 @@ public class CompressImageAndPaste {
     }
 
     private long getImageSizeInBytes(BufferedImage image) {
-        int width = image.getWidth();
-        int height = image.getHeight();
-        int bytesPerPixel = image.getColorModel().getPixelSize() / 8;
-        long sizeInBytes = (long) width * height * bytesPerPixel;
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        try {
+            ImageIO.write(image, "jpg", outputStream);
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
+        byte[] compressedImageBytes = outputStream.toByteArray();
+        long sizeInBytes = compressedImageBytes.length;
         return sizeInBytes;
     }
 
